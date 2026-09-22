@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 스마트 분양지도</title>
   
-  <!-- 키 등록이 필요 없는 글로벌 표준 Leaflet 지도 라이브러리 -->
+  <!-- Leaflet 오픈소스 라이브러리 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
@@ -65,16 +65,15 @@
     function initMap() {
       const daeguParkCoord = [35.8249666, 128.6672119];
       
-      // 지도 초기화 (대구대공원 중심)
       map = L.map('map').setView(daeguParkCoord, 14);
 
-      // 깔끔하고 모던한 지도 타일 레이어 (API 키 불필요)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-        maxZoom: 19
+      // 워터마크가 전혀 없는 100% 무료 OpenStreetMap 타일
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
-      // 대구대공원 반경 1km 원 오버레이
+      // 반경 1km 원형 오버레이
       L.circle(daeguParkCoord, {
         radius: 1000,
         color: '#2563eb',
