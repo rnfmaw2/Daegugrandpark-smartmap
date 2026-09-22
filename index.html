@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 AI 스마트 분양지도</title>
+  <!-- 카카오 지도 API 호출 (사용자님 키 적용 완료) -->
   <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e16c213b532d9339f0d3e9ae1167caa2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,23 +53,34 @@
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyKahFADbkqYNlFAHfxpgHkFM_-3Ks3aMECbijHOMcdoO7a7X6VKO6ECIHYbFsM9cLoJg/exec";
 
     function initMap() {
-      const daeguParkCoord = new naver.maps.LatLng(35.8249666, 128.6672119);
-
-      map = new naver.maps.Map('map', {
+      const container = document.getElementById('map');
+      const daeguParkCoord = new kakao.maps.LatLng(35.8249666, 128.6672119);
+      
+      const options = {
         center: daeguParkCoord,
-        zoom: 14,
-        mapTypeControl: true
-      });
+        level: 5
+      };
 
-      new naver.maps.Circle({
+      // 카카오 지도 객체 생성
+      map = new kakao.maps.Map(container, options);
+
+      // 지도 컨트롤러 등록
+      const mapTypeControl = new kakao.maps.MapTypeControl();
+      map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+      const zoomControl = new kakao.maps.ZoomControl();
+      map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
+
+      // 반경 1km 원형 오버레이 등록
+      new kakao.maps.Circle({
         map: map,
         center: daeguParkCoord,
         radius: 1000,
-        fillColor: '#3b82f6',
-        fillOpacity: 0.12,
-        strokeColor: '#2563eb',
         strokeWeight: 2,
-        strokeDashStyle: 'shortdash'
+        strokeColor: '#2563eb',
+        strokeOpacity: 0.8,
+        strokeStyle: 'dashed',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.12
       });
 
       fetchSheetData();
@@ -92,13 +104,15 @@
 
     function renderMarkers() {
       globalLocations.forEach(loc => {
-        const marker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(loc.lat, loc.lng),
-          map: map,
+        const markerPosition = new kakao.maps.LatLng(loc.lat, loc.lng);
+        const marker = new kakao.maps.Marker({
+          position: markerPosition,
           title: loc.name
         });
 
-        naver.maps.Event.addListener(marker, 'click', function() {
+        marker.setMap(map);
+
+        kakao.maps.event.addListener(marker, 'click', function() {
           showLocationDetail(loc);
         });
       });
