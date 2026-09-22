@@ -41,8 +41,6 @@
     
     /* 지도 영역 */
     #map { flex: 1; height: 100%; z-index: 1; background: #e5e3df; }
-    
-    /* 억지로 색상을 칠하던 CSS 필터는 구글 지도 사용으로 불필요해져 삭제했습니다. */
   </style>
 </head>
 <body>
@@ -89,8 +87,9 @@
         maxBoundsViscosity: 1.0 
       });
 
-      // 💡 핵심 교체: 구글 기본 도로망 타일 (등고선 없음, 초록색 산 뚜렷, 지하철 완벽)
-      L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      // 💡 핵심 교체: 구글 대중교통(Transit) 특화 레이어
+      // 기본 도로망(lyrs=m)에 대중교통 옵션(,transit)을 추가하여 네이버지도처럼 지하철 노선을 굵고 선명하게 만듭니다.
+      L.tileLayer('https://mt1.google.com/vt/lyrs=m,transit&x={x}&y={y}&z={z}', {
         maxZoom: 19,
         attribution: 'Map data &copy; Google'
       }).addTo(map);
