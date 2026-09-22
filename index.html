@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 스마트 분양지도</title>
   
-  <!-- Leaflet 라이브러리 -->
+  <!-- Leaflet 오픈소스 라이브러리 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
@@ -40,7 +40,12 @@
     .placeholder-text { text-align: center; color: #94a3b8; font-size: 1.05rem; margin-top: 150px; font-weight: 600; letter-spacing: -0.5px; }
     
     /* 지도 영역 */
-    #map { flex: 1; height: 100%; z-index: 1; }
+    #map { flex: 1; height: 100%; z-index: 1; background: #e5e3df; }
+    
+    /* 핵심: 브이월드 지도의 밋밋한 색상을 네이버지도처럼 뚜렷하고 생생하게 강제 변환 */
+    .leaflet-tile {
+      filter: saturate(220%) contrast(110%);
+    }
   </style>
 </head>
 <body>
@@ -60,7 +65,8 @@
   <div id="map"></div>
 
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyKahFADbkqYNlFAHfxpgHkFM_-3Ks3aMECbijHOMcdoO7a7X6VKO6ECIHYbFsM9cLoJg/exec";
+    // https://script.google.com/macros/s/AKfycbyFGaD3i59GdYByjPhhgdCLNSAd22gDM09i3pwqkVFD_gYVSCMiUjhPKuuwRGM6x_eK6A/exec
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyFGaD3i59GdYByjPhhgdCLNSAd22gDM09i3pwqkVFD_gYVSCMiUjhPKuuwRGM6x_eK6A/exec";
 
     let map;
     let globalLocations = [];
@@ -69,27 +75,25 @@
     function initMap() {
       const daeguParkCoord = [35.8249666, 128.6672119];
       
-      // 대구/경북 화면 이탈 방지용 바운더리 (남서, 북동 좌표 설정)
       const gyeongbukBounds = [
-        [35.3000, 127.7000], // 남서쪽 끝 (경남 접경)
-        [37.2000, 129.6000]  // 북동쪽 끝 (울진 앞바다)
+        [35.3000, 127.7000],
+        [37.2000, 129.6000]
       ];
       
       map = L.map('map', {
         center: daeguParkCoord,
         zoom: 14,
-        minZoom: 9, // 축소 제한
-        maxBounds: gyeongbukBounds, // 지도 드래그 제한구역 적용
-        maxBoundsViscosity: 1.0 // 화면 밖으로 안 튕겨나가게 100% 고정
+        minZoom: 9,
+        maxBounds: gyeongbukBounds,
+        maxBoundsViscosity: 1.0 
       });
 
-      // 국토교통부 브이월드(Vworld) 한국형 기본 지도 (네이버지도와 유사한 UI)
+      // 브이월드 기본 지도 타일 호출
       L.tileLayer('https://xdworld.vworld.kr/2d/Base/service/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: 'Map data &copy; <a href="https://vworld.kr" target="_blank">VWORLD</a>'
       }).addTo(map);
 
-      // 대구대공원 반경 1km 원형 오버레이
       L.circle(daeguParkCoord, {
         radius: 1000,
         color: '#2563eb',
@@ -116,7 +120,7 @@
         })
         .catch(err => {
           console.error(err);
-          panel.innerHTML = "❌ 데이터를 불러오지 못했습니다.";
+          panel.innerHTML = "❌ 데이터를 불러오지 못했습니다. URL을 확인해 주세요.";
         });
     }
 
