@@ -5,44 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 스마트 분양지도</title>
   
-  <!-- 카카오 지도 API 호출 (보안 통신 https 강제 적용 및 사용자 키 연동) -->
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e16c213b532d9339f0d3e9ae1167caa2"></script>
+  <!-- 키 등록이 필요 없는 글로벌 표준 Leaflet 지도 라이브러리 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f8fafc; }
     
-    /* 좌측 정보 패널 디자인 */
-    #sidebar { width: 450px; height: 100%; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+    #sidebar { width: 450px; height: 100%; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
     .header { padding: 25px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
     .header h1 { font-size: 1.3rem; color: #1e3a8a; margin-bottom: 8px; font-weight: 800; }
     .header p { font-size: 0.9rem; color: #64748b; line-height: 1.5; }
     
     #content { padding: 20px; overflow-y: auto; flex: 1; }
-    
-    /* 입지 상세 정보 카드 */
     .info-card { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
     .info-card h3 { font-size: 1.15rem; color: #0f172a; margin-bottom: 10px; font-weight: 700; }
     .info-card p { font-size: 0.9rem; color: #334155; margin-bottom: 6px; line-height: 1.4; }
     .badge-cat { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; background: #e0e7ff; color: #3730a3; margin-bottom: 10px; }
     
-    /* 분양 현황 표 */
     .table-wrap { margin-top: 15px; }
     .table-wrap h4 { font-size: 1rem; color: #1e293b; margin-bottom: 12px; font-weight: 700; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: #ffffff; }
     th, td { padding: 10px 8px; border: 1px solid #e2e8f0; text-align: center; }
     th { background: #f8fafc; color: #475569; font-weight: 700; }
     
-    /* 계약 상태 컬러 뱃지 */
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-    .status-contracted { background: #fee2e2; color: #991b1b; } /* 계약완료 */
-    .status-available { background: #dcfce7; color: #166534; }  /* 미분양 */
-    .status-progress { background: #fef3c7; color: #92400e; }   /* 진행중 등 */
+    .status-contracted { background: #fee2e2; color: #991b1b; }
+    .status-available { background: #dcfce7; color: #166534; }
+    .status-progress { background: #fef3c7; color: #92400e; }
     
     .placeholder-text { text-align: center; color: #94a3b8; font-size: 1rem; margin-top: 120px; font-weight: 600; }
-    
-    /* 카카오 지도 영역 */
-    #map { flex: 1; height: 100%; position: relative; }
+    #map { flex: 1; height: 100%; z-index: 1; }
   </style>
 </head>
 <body>
@@ -54,7 +48,7 @@
     </div>
     <div id="content">
       <div id="detail-panel" class="placeholder-text">
-        📍 지도에서 원하시는 핀을 클릭해주세요.
+        📍 지도에서 마커를 클릭해주세요.
       </div>
     </div>
   </div>
@@ -62,93 +56,68 @@
   <div id="map"></div>
 
   <script>
-    // 기존에 확인된 구글 스프레드시트 API 주소
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyKahFADbkqYNlFAHfxpgHkFM_-3Ks3aMECbijHOMcdoO7a7X6VKO6ECIHYbFsM9cLoJg/exec";
 
     let map;
     let globalLocations = [];
     let globalSales = [];
 
-    // 1. 카카오 지도 생성 및 초기 세팅
     function initMap() {
-      const container = document.getElementById('map');
+      const daeguParkCoord = [35.8249666, 128.6672119];
       
-      // 중심 좌표: 대구대공원
-      const daeguParkCoord = new kakao.maps.LatLng(35.8249666, 128.6672119);
-      
-      const options = {
-        center: daeguParkCoord,
-        level: 5 // 확대 레벨
-      };
+      // 지도 초기화 (대구대공원 중심)
+      map = L.map('map').setView(daeguParkCoord, 14);
 
-      map = new kakao.maps.Map(container, options);
+      // 깔끔하고 모던한 지도 타일 레이어 (API 키 불필요)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+      }).addTo(map);
 
-      // 줌, 타입 컨트롤러 추가
-      const mapTypeControl = new kakao.maps.MapTypeControl();
-      map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
-      const zoomControl = new kakao.maps.ZoomControl();
-      map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
-
-      // 대구대공원 반경 1km 가이드 서클 추가
-      new kakao.maps.Circle({
-        map: map,
-        center: daeguParkCoord,
+      // 대구대공원 반경 1km 원 오버레이
+      L.circle(daeguParkCoord, {
         radius: 1000,
-        strokeWeight: 2,
-        strokeColor: '#2563eb',
-        strokeOpacity: 0.9,
-        strokeStyle: 'dashed',
+        color: '#2563eb',
+        weight: 2,
+        dashArray: '6, 6',
         fillColor: '#3b82f6',
-        fillOpacity: 0.1
-      });
+        fillOpacity: 0.12
+      }).addTo(map);
 
-      // 지도 세팅 후 구글 시트 데이터 불러오기
       fetchSheetData();
     }
 
-    // 2. 구글 시트에서 입지 및 분양 데이터 가져오기
     function fetchSheetData() {
       const panel = document.getElementById('detail-panel');
       panel.innerHTML = "⏳ 실시간 분양 데이터를 동기화하는 중입니다...";
 
       fetch(GAS_API_URL)
-        .then(response => {
-          if (!response.ok) throw new Error('네트워크 응답 오류');
-          return response.json();
-        })
+        .then(res => res.json())
         .then(data => {
           globalLocations = data.locations || [];
           globalSales = data.sales || [];
           renderMarkers();
-          panel.innerHTML = "📍 지도에서 원하시는 핀을 클릭해주세요.";
+          panel.innerHTML = "📍 지도에서 마커를 클릭해주세요.";
         })
-        .catch(error => {
-          console.error("데이터 동기화 실패:", error);
-          panel.innerHTML = "❌ 데이터를 불러오지 못했습니다. 새로고침을 해주세요.";
+        .catch(err => {
+          console.error(err);
+          panel.innerHTML = "❌ 데이터를 불러오지 못했습니다.";
         });
     }
 
-    // 3. 지도 위에 핀(마커) 찍기
     function renderMarkers() {
       globalLocations.forEach(loc => {
         if(!loc.lat || !loc.lng) return;
 
-        const markerPosition = new kakao.maps.LatLng(loc.lat, loc.lng);
-        const marker = new kakao.maps.Marker({
-          position: markerPosition,
-          title: loc.name,
-          map: map
-        });
+        const marker = L.marker([loc.lat, loc.lng]).addTo(map);
 
-        // 마커 클릭 시 동작 이벤트 연결
-        kakao.maps.event.addListener(marker, 'click', function() {
+        marker.on('click', function() {
           showLocationDetail(loc);
-          map.panTo(markerPosition); // 클릭한 마커가 중앙으로 오게 이동
+          map.panTo([loc.lat, loc.lng]);
         });
       });
     }
 
-    // 4. 클릭한 입지의 세부 데이터와 분양 표 출력하기
     function showLocationDetail(loc) {
       const panel = document.getElementById('detail-panel');
       
@@ -161,7 +130,6 @@
         </div>
       `;
 
-      // '사업지' 카테고리이거나 이름에 '공동주택'이 들어간 경우 분양 현황 표 노출
       if (loc.category === "사업지" || (loc.name && loc.name.includes("공동주택"))) {
         html += `
           <div class="table-wrap">
@@ -183,8 +151,8 @@
 
         globalSales.forEach(s => {
           if (!s.complex) return;
-          
           hasSalesData = true;
+
           let badgeClass = 'status-progress';
           if (s.status === '계약완료') badgeClass = 'status-contracted';
           if (s.status === '미분양') badgeClass = 'status-available';
@@ -210,10 +178,7 @@
       panel.innerHTML = html;
     }
 
-    // 카카오 SDK 로드 완료 후 실행
-    window.onload = function() {
-      initMap();
-    };
+    window.onload = initMap;
   </script>
 </body>
 </html>
