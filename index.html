@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 스마트 분양지도</title>
   
-  <!-- Leaflet 오픈소스 라이브러리 -->
+  <!-- Leaflet 오픈소스 라이브러리 (API 키 불필요) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
@@ -42,10 +42,7 @@
     /* 지도 영역 */
     #map { flex: 1; height: 100%; z-index: 1; background: #e5e3df; }
     
-    /* 핵심: 브이월드 지도의 밋밋한 색상을 네이버지도처럼 뚜렷하고 생생하게 강제 변환 */
-    .leaflet-tile {
-      filter: saturate(220%) contrast(110%);
-    }
+    /* 억지로 색상을 칠하던 CSS 필터는 구글 지도 사용으로 불필요해져 삭제했습니다. */
   </style>
 </head>
 <body>
@@ -65,7 +62,9 @@
   <div id="map"></div>
 
   <script>
-    // https://script.google.com/macros/s/AKfycbyFGaD3i59GdYByjPhhgdCLNSAd22gDM09i3pwqkVFD_gYVSCMiUjhPKuuwRGM6x_eK6A/exec
+    // =======================================================================
+    // 🚨 [필수] 아래 따옴표 안에 성공하셨던 '구글 웹 앱 URL'을 반드시 붙여넣어 주세요!
+    // =======================================================================
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyFGaD3i59GdYByjPhhgdCLNSAd22gDM09i3pwqkVFD_gYVSCMiUjhPKuuwRGM6x_eK6A/exec";
 
     let map;
@@ -73,8 +72,10 @@
     let globalSales = [];
 
     function initMap() {
+      // 대구대공원 좌표
       const daeguParkCoord = [35.8249666, 128.6672119];
       
+      // 대구광역시/경상북도 화면 고정 (화면 이탈 방지)
       const gyeongbukBounds = [
         [35.3000, 127.7000],
         [37.2000, 129.6000]
@@ -88,12 +89,13 @@
         maxBoundsViscosity: 1.0 
       });
 
-      // 브이월드 기본 지도 타일 호출
-      L.tileLayer('https://xdworld.vworld.kr/2d/Base/service/{z}/{x}/{y}.png', {
+      // 💡 핵심 교체: 구글 기본 도로망 타일 (등고선 없음, 초록색 산 뚜렷, 지하철 완벽)
+      L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
         maxZoom: 19,
-        attribution: 'Map data &copy; <a href="https://vworld.kr" target="_blank">VWORLD</a>'
+        attribution: 'Map data &copy; Google'
       }).addTo(map);
 
+      // 대구대공원 반경 1km 원형 가이드 오버레이
       L.circle(daeguParkCoord, {
         radius: 1000,
         color: '#2563eb',
