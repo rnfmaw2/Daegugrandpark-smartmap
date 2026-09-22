@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>대구대공원 스마트 분양지도</title>
   
-  <!-- Leaflet 오픈소스 라이브러리 (API 키 절대 불필요) -->
+  <!-- Leaflet 라이브러리 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
@@ -13,7 +13,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f8fafc; }
     
-    /* 모던하게 다듬은 좌측 정보 패널 */
+    /* 좌측 정보 패널 */
     #sidebar { width: 450px; height: 100%; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 1000; box-shadow: 4px 0 15px rgba(0,0,0,0.04); }
     .header { padding: 25px 20px; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
     .header h1 { font-size: 1.35rem; color: #1e3a8a; margin-bottom: 8px; font-weight: 800; letter-spacing: -0.5px; }
@@ -60,7 +60,6 @@
   <div id="map"></div>
 
   <script>
-    // 완벽하게 통신 성공한 구글 스프레드시트 API 유지
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyKahFADbkqYNlFAHfxpgHkFM_-3Ks3aMECbijHOMcdoO7a7X6VKO6ECIHYbFsM9cLoJg/exec";
 
     let map;
@@ -68,10 +67,9 @@
     let globalSales = [];
 
     function initMap() {
-      // 중심: 대구대공원
       const daeguParkCoord = [35.8249666, 128.6672119];
       
-      // 대구/경북 화면 이탈 방지용 바운더리 (남서, 북동 좌표)
+      // 대구/경북 화면 이탈 방지용 바운더리 (남서, 북동 좌표 설정)
       const gyeongbukBounds = [
         [35.3000, 127.7000], // 남서쪽 끝 (경남 접경)
         [37.2000, 129.6000]  // 북동쪽 끝 (울진 앞바다)
@@ -80,15 +78,15 @@
       map = L.map('map', {
         center: daeguParkCoord,
         zoom: 14,
-        minZoom: 9, // 한반도 전체로 축소되는 것 방지
-        maxBounds: gyeongbukBounds, // 지도 드래그 제한구역 설정
-        maxBoundsViscosity: 1.0 // 튕겨나가는 저항력 (1.0 = 완벽히 막음)
+        minZoom: 9, // 축소 제한
+        maxBounds: gyeongbukBounds, // 지도 드래그 제한구역 적용
+        maxBoundsViscosity: 1.0 // 화면 밖으로 안 튕겨나가게 100% 고정
       });
 
-      // API 키 없이 즉시 렌더링되는 구글 지도 도로망 타일 (지하철/UI 완벽 해결)
-      L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      // 국토교통부 브이월드(Vworld) 한국형 기본 지도 (네이버지도와 유사한 UI)
+      L.tileLayer('https://xdworld.vworld.kr/2d/Base/service/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: 'Map data © Google'
+        attribution: 'Map data &copy; <a href="https://vworld.kr" target="_blank">VWORLD</a>'
       }).addTo(map);
 
       // 대구대공원 반경 1km 원형 오버레이
